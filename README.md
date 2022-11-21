@@ -47,7 +47,6 @@ $ python multisearcher.py -h
 
 Usage via docker
 ----
-
 ```
 $ docker build -t yourname/msearch .
 $ docker run -ti -v ${PWD}:/code girorme/msearch

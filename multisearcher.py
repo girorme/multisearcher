@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 # -*- encoding: utf8 -*-
-# Multi searcher by Nas @proclnas <proclnas@gmail.com>
+# Multi searcher
 #
 # The MultiSearcher is an open source scan which uses some engines
 # to find web sites with the use of keywords and phrases.
@@ -157,7 +157,6 @@ if __name__ == "__main__":
      | |\/| | | | | | __| |\___ \ / _ \/ _` | '__/ __| '_ \ / _ \ '__|
      | |  | | |_| | | |_| |____) |  __/ (_| | | | (__| | | |  __/ |
      |_|  |_|\__,_|_|\__|_|_____/ \___|\__,_|_|  \___|_| |_|\___|_|
-     By @proclnas
     '''
 
     parser = argparse.ArgumentParser(description='Procz Multi Searcher')
