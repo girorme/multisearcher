@@ -5,7 +5,11 @@ The MultiSearcher is an open source scan which uses some engines
 to find web sites with the use of keywords and phrases
 
 ### Dependencies
-* Python 2.7+
+* Docker to run via container with no dependencies
+
+or 
+
+* Python 2.7
 * requests
 * BeautifulSoup
 
@@ -14,34 +18,44 @@ Installation
 
 Preferably, you can download MultiSearcher by cloning the [Git](https://github.com/proclnas/multisearcher) repository:
 
-    git clone https://github.com/proclnas/multisearcher.git 
-	cd multisearcher
-	pip install -r requirements.txt
+```
+$ git clone https://github.com/proclnas/multisearcher.git 
+$ cd multisearcher
+$ pip install -r requirements.txt
+```
 
 Usage
 ----
 
 Basic usage:
-
-	python multisearcher.py -f word_file -o output -t threads
+```
+$ python multisearcher.py -f word_file -o output -t threads
+```
 	
 The words in the word_file are separated by a end_line:
-	
-	work /wp-content/
-	products index.php?option=
-	...
+
+```
+work /wp-content/
+products index.php?option=
+...
+```
 
 Or full help:
+```
+$ python multisearcher.py -h
+```
 
-    python multisearcher.py -h
+Usage via docker
+----
+
+```
+$ docker build -t yourname/msearch .
+$ docker run -ti -v ${PWD}:/code girorme/msearch
+```
     
 Demo
 ----
 [![Youtube Video](http://i.imgur.com/1CRVxu1.jpg)](https://www.youtube.com/watch?v=NaLIHsaBxDM)
-
-Considerations
-----
-	Made to be simple, so this is not free of bugs. Feel free to fork and contribute! (:
 
 ### License
 ```
