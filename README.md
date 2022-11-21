@@ -49,7 +49,7 @@ Usage via docker
 ----
 ```
 $ docker build -t yourname/msearch .
-$ docker run -ti -v ${PWD}:/code girorme/msearch
+$ docker run -ti -v ${PWD}:/code yourname/msearch
 ```
     
 Demo
