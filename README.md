@@ -51,10 +51,6 @@ Usage via docker
 $ docker build -t yourname/msearch .
 $ docker run -ti -v ${PWD}:/code yourname/msearch
 ```
-    
-Demo
-----
-[![Youtube Video](http://i.imgur.com/1CRVxu1.jpg)](https://www.youtube.com/watch?v=NaLIHsaBxDM)
 
 ### License
 ```
