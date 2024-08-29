@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # -*- encoding: utf8 -*-
 # Multi searcher
 #
@@ -8,7 +8,7 @@
 # Current engines:
 # [ask, bing, rambler.ru]
 #
-# Made to be simple, so this is not free of bugs.
+# Made to be simple, so this is not bug free.
 # Feel free to fork and send a pull request to contribute ;).
 
 import requests
