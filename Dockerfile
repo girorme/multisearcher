@@ -1,19 +1,31 @@
-# first stage
-FROM python:2.7 AS builder
+# Use a slim image for reduced size
+FROM python:3.12-slim AS builder
+WORKDIR /app
+
 COPY requirements.txt .
 
-# install dependencies to the local user directory (eg. /root/.local)
-RUN pip install --user -r requirements.txt
+# Install dependencies to a local user directory
+RUN pip install --user --no-cache-dir -r requirements.txt
 
-# second unnamed stage
-FROM python:2.7
+# Second stage
+FROM python:3.12-slim
 WORKDIR /code
 
-# copy only the dependencies installation from the 1st stage image
-COPY --from=builder /root/.local /root/.local
+# Copy only the dependencies from the builder stage
+COPY --from=builder /root/.local /home/appuser/.local
 COPY ./ .
 
-# update PATH environment variable
-ENV PATH=/root/.local:$PATH
+# Create a non-root user and group
+RUN adduser --disabled-password --gecos "" appuser
 
-CMD ["python", "multisearcher.py", "-f", "words.txt", "-t", "10"]
+# Change ownership to the non-root user
+RUN chown -R appuser:appuser /code /home/appuser/.local
+
+# Switch to the non-root user
+USER appuser
+
+# Update PATH environment variable
+ENV PATH=/home/appuser/.local/bin:$PATH
+
+# Use ENTRYPOINT to allow passing additional arguments
+ENTRYPOINT ["python", "multisearcher.py"]

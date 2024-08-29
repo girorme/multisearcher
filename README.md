@@ -19,7 +19,7 @@ Installation
 Preferably, you can download MultiSearcher by cloning the [Git](https://github.com/proclnas/multisearcher) repository:
 
 ```
-$ git clone https://github.com/proclnas/multisearcher.git 
+$ git clone https://github.com/girorme/multisearcher.git 
 $ cd multisearcher
 $ pip install -r requirements.txt
 ```
@@ -48,8 +48,8 @@ $ python multisearcher.py -h
 Usage via docker
 ----
 ```
-$ docker build -t yourname/msearch .
-$ docker run -ti -v ${PWD}:/code yourname/msearch
+$ docker build -t msearch .
+$ docker run -ti -v ${PWD}:/code msearch
 ```
 
 ### License

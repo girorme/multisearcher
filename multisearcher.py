@@ -16,10 +16,9 @@ import re
 import os
 import argparse
 import sys
-from threading import Thread, Event, Lock
-from Queue import Queue
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 from bs4 import BeautifulSoup
-
 
 class MultiSearcher:
     ENGINE_BING = 'bing'
@@ -41,25 +40,23 @@ class MultiSearcher:
                              'bing|rambler|youtube'
         self.engines = {
             MultiSearcher.ENGINE_BING: {
-                'progress_string': '[Bing] Quering page {}/{} with dork {}\n',
+                'progress_string': '[Bing] Quering page {}/{} with dork {}',
                 'search_string': 'http://www.bing.com/search?q={}&count=50&first={}',
-                'page_range': xrange(1, self.ptr_limits['bing'], 10)
+                'page_range': range(1, self.ptr_limits['bing'], 10)
             },
             MultiSearcher.ENGINE_ASK: {
-                'progress_string': '[Ask] Quering page {}/{} with dork {}\n',
+                'progress_string': '[Ask] Quering page {}/{} with dork {}',
                 'search_string': 'http://www.ask.com/web?q={}&page={}',
-                'page_range': xrange(1, self.ptr_limits['ask'])
+                'page_range': range(1, self.ptr_limits['ask'])
             },
             MultiSearcher.ENGINE_RAMBLER: {
-                'progress_string': '[Rambler] Quering page {}/{} with dork {}\n',
+                'progress_string': '[Rambler] Quering page {}/{} with dork {}',
                 'search_string': 'http://nova.rambler.ru/search?query={}&page={}',
-                'page_range': xrange(1, self.ptr_limits['rambler'])
+                'page_range': range(1, self.ptr_limits['rambler'])
             }
         }
 
         self.threads = threads
-        self.q = Queue()
-        self.t_stop = Event()
         self.counter = 0
         self.list_size = len(open(self.dork_file).readlines())
         self.lock = Lock()
@@ -80,84 +77,56 @@ class MultiSearcher:
         current_engine = self.engines[engine]
 
         for ptr in current_engine['page_range']:
-            with self.lock:
-                self.terminal.write(current_engine['progress_string'].format(
-                    ptr, self.ptr_limits[engine], word
-                ))
+            print(current_engine['progress_string'].format(
+                ptr, self.ptr_limits[engine], word
+            ))
 
             content = requests.get(
                 current_engine['search_string'].format(word, str(ptr))
             )
 
-            if content.ok:
-                try:
-                    soup = BeautifulSoup(content.text, 'html.parser')
-
-                    for link in soup.find_all('a'):
-                        link = link.get('href')
-
-                        if 'http' in link and not re.search(
-                            self.exclude_itens, link
-                        ):
-
-                            if link not in self.links:
-                                self.links.append(link)
-                                with self.lock:
-                                    with open(self.output, 'a+') as fd:
-                                        fd.write(link + '\n')
-                except Exception:
-                    pass
-
-    def search(self, q):
-        """Control flow"""
-        while not self.t_stop.is_set():
-            self.t_stop.wait(1)
+            if not content.ok:
+                pass
 
             try:
-                word = q.get()
-                for engine in MultiSearcher.get_engines():
-                    self.get_links(word, engine)
+                soup = BeautifulSoup(content.text, 'html.parser')
 
+                for link in soup.find_all('a'):
+                    link = link.get('href')
+
+                    if 'http' in link and not re.search(
+                        self.exclude_itens, link
+                    ):
+
+                        if link not in self.links:
+                            self.links.append(link)
+                            with self.lock:
+                                with open(self.output, 'a+') as fd:
+                                    fd.write(link + '\n')
             except Exception:
                 pass
-            finally:
-                self.counter += 1
-                q.task_done()
+    
+    def search(self, word):
+        for engine in MultiSearcher.get_engines():
+            self.get_links(word, engine)    
+        
+        print("Finished!")
 
     def main(self):
-        """ Prepare threads and launch main search"""
-        for _ in xrange(self.threads):
-            t = Thread(target=self.search, args=(self.q,))
-            t.setDaemon(True)
-            t.start()
-
-        for word in open(self.dork_file):
-            self.q.put(word.strip())
-
-        try:
-            while not self.t_stop.is_set():
-                self.t_stop.wait(1)
-                if self.counter == self.list_size:
-                    self.t_stop.set()
-
-        except KeyboardInterrupt:
-            print '~ Sending signal to kill threads...'
-            self.t_stop.set()
-            exit(0)
-
-        self.q.join()
-        print 'Finished!'
+        with ThreadPoolExecutor(max_workers=self.threads) as executor:
+            for word in open(self.dork_file):
+                executor.submit(self.search, word)
 
 
 if __name__ == "__main__":
-    banner = '''
+    banner = """
       __  __       _ _   _  _____                     _
      |  \/  |     | | | (_)/ ____|                   | |
      | \  / |_   _| | |_ _| (___   ___  __ _ _ __ ___| |__   ___ _ __
      | |\/| | | | | | __| |\___ \ / _ \/ _` | '__/ __| '_ \ / _ \ '__|
      | |  | | |_| | | |_| |____) |  __/ (_| | | | (__| | | |  __/ |
      |_|  |_|\__,_|_|\__|_|_____/ \___|\__,_|_|  \___|_| |_|\___|_|
-    '''
+    """
 
     parser = argparse.ArgumentParser(description='Procz Multi Searcher')
 
@@ -190,7 +159,8 @@ if __name__ == "__main__":
         if not os.path.isfile(args.dork_file):
             exit('File {} not found'.format(args.dork_file))
 
-        print banner
+        print(banner)
+
         multi_searcher = MultiSearcher(
             args.dork_file,
             args.output,
