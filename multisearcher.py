@@ -152,7 +152,7 @@ if __name__ == "__main__":
         help='Concurrent workers (By word)',
         type=int
     )
-    parser.add_argument('--version', action='version', version='%(prog)s 1.0')
+    parser.add_argument('--version', action='version', version='%(prog)s 2.0.0')
     args = parser.parse_args()
 
     if args.dork_file:
