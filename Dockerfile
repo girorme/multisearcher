@@ -1,5 +1,5 @@
 # Use a slim image for reduced size
-FROM python:3.12-slim AS builder
+FROM python:3.11-slim AS builder
 WORKDIR /app
 
 COPY requirements.txt .
@@ -8,7 +8,7 @@ COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
 # Second stage
-FROM python:3.12-slim
+FROM python:3.11-slim
 WORKDIR /code
 
 # Copy only the dependencies from the builder stage
