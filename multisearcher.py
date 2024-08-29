@@ -57,8 +57,6 @@ class MultiSearcher:
         }
 
         self.threads = threads
-        self.counter = 0
-        self.list_size = len(open(self.dork_file).readlines())
         self.lock = Lock()
         self.terminal = sys.stdout
 
@@ -78,7 +76,7 @@ class MultiSearcher:
 
         for ptr in current_engine['page_range']:
             with self.lock:
-                sys.stdout.write(current_engine['progress_string'].format(
+                self.terminal.write(current_engine['progress_string'].format(
                     ptr, self.ptr_limits[engine], word
                 ))
 
@@ -108,16 +106,16 @@ class MultiSearcher:
                 pass
     
     def search(self, word):
-        for engine in MultiSearcher.get_engines():
-            self.get_links(word, engine)    
-        
-        print("Finished!")
+        with ThreadPoolExecutor(max_workers=self.threads) as engine_executor:
+            for engine in MultiSearcher.get_engines():
+                engine_executor.submit(self.get_links, word, engine)
 
     def main(self):
-        with ThreadPoolExecutor(max_workers=self.threads) as executor:
+        with ThreadPoolExecutor(max_workers=self.threads) as word_executor:
             for word in open(self.dork_file):
-                executor.submit(self.search, word)
-
+                word_executor.submit(self.search, word)
+        
+        print("Finished!")
 
 if __name__ == "__main__":
     banner = """
