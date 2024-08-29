@@ -49,7 +49,7 @@ Usage via docker
 ----
 ```
 $ docker build -t msearch .
-$ docker run -ti -v ${PWD}:/code msearch
+$ docker run --rm -v "$(pwd)":/code msearch -f words.txt -t 10
 ```
 
 ### License
