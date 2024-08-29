@@ -68,6 +68,13 @@ class MultiSearcher:
             MultiSearcher.ENGINE_ASK,
             MultiSearcher.ENGINE_RAMBLER
         ]
+    
+    def is_valid_link(self, link):
+        return (
+            'http' in link 
+            and not re.search(self.exclude_itens, link) 
+            and link not in self.links
+        )
 
     def get_links(self, word, engine):
         """Fetch links from engnies"""
@@ -93,15 +100,13 @@ class MultiSearcher:
                 for link in soup.find_all('a'):
                     link = link.get('href')
 
-                    if 'http' in link and not re.search(
-                        self.exclude_itens, link
-                    ):
+                    print(link)
 
-                        if link not in self.links:
-                            self.links.append(link)
-                            with self.lock:
-                                with open(self.output, 'a+') as fd:
-                                    fd.write(link + '\n')
+                    if is_valid_link(link):
+                        self.links.append(link)
+                        with self.lock:
+                            with open(self.output, 'a+') as fd:
+                                fd.write(link + '\n')
             except Exception:
                 pass
     
