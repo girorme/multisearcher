@@ -77,9 +77,10 @@ class MultiSearcher:
         current_engine = self.engines[engine]
 
         for ptr in current_engine['page_range']:
-            print(current_engine['progress_string'].format(
-                ptr, self.ptr_limits[engine], word
-            ))
+            with self.lock:
+                sys.stdout.write(current_engine['progress_string'].format(
+                    ptr, self.ptr_limits[engine], word
+                ))
 
             content = requests.get(
                 current_engine['search_string'].format(word, str(ptr))
