@@ -41,7 +41,7 @@ class MultiSearcher:
         self.engines = {
             MultiSearcher.ENGINE_BING: {
                 'progress_string': '[Bing] Quering page {}/{} with dork {}',
-                'search_string': 'http://www.bing.com/search?q={}&count=50&first={}',
+                'search_string': 'http://www.bing.com/search?q={}&count=50&first={}&rdr=1',
                 'page_range': range(1, self.ptr_limits['bing'], 10)
             },
             MultiSearcher.ENGINE_ASK: {
@@ -71,7 +71,8 @@ class MultiSearcher:
     
     def is_valid_link(self, link):
         return (
-            'http' in link 
+            link is not None 
+            and "http" in link 
             and not re.search(self.exclude_itens, link) 
             and link not in self.links
         )
@@ -97,21 +98,21 @@ class MultiSearcher:
             try:
                 soup = BeautifulSoup(content.text, 'html.parser')
 
-                for link in soup.find_all('a'):
+                for link in soup.find_all("a"):
                     link = link.get('href')
 
-                    print(link)
-
-                    if is_valid_link(link):
+                    if self.is_valid_link(link):
                         self.links.append(link)
                         with self.lock:
                             with open(self.output, 'a+') as fd:
                                 fd.write(link + '\n')
-            except Exception:
+            except Exception as e:
                 pass
     
     def search(self, word):
-        with ThreadPoolExecutor(max_workers=self.threads) as engine_executor:
+        engine_count = len(MultiSearcher.get_engines())
+
+        with ThreadPoolExecutor(max_workers=engine_count) as engine_executor:
             for engine in MultiSearcher.get_engines():
                 engine_executor.submit(self.get_links, word, engine)
 
