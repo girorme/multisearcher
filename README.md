@@ -1,7 +1,7 @@
 MultiSearcher
 ---
 
-The MultiSearcher is an open source scan which uses some engines
+MultiSearcher is an open source scan which uses some engines
 to find web sites with the use of keywords and phrases
 
 ### Dependencies
@@ -9,14 +9,12 @@ to find web sites with the use of keywords and phrases
 
 or 
 
-* Python 2.7
+* Python 3.x
 * requests
 * BeautifulSoup
 
-Installation
+Usage
 ----
-
-Preferably, you can download MultiSearcher by cloning the [Git](https://github.com/proclnas/multisearcher) repository:
 
 ```
 $ git clone https://github.com/girorme/multisearcher.git 
@@ -24,13 +22,12 @@ $ cd multisearcher
 $ pip install -r requirements.txt
 ```
 
-Usage
-----
-
 Basic usage:
 ```
-$ python multisearcher.py -f word_file -o output -t threads
+$ python multisearcher.py -f word_file -o output_file -t threads
 ```
+
+the output file will be created in `output/` directory
 	
 The words in the word_file are separated by a end_line:
 
