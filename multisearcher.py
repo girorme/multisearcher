@@ -43,7 +43,7 @@ class MultiSearcher:
         self.engines = {
             MultiSearcher.ENGINE_BING: {
                 'progress_string': '[Bing] Quering page {}/{} with dork {}\n',
-                'search_string': 'https://www.bing.com/search?q={}&go=Submit&qs=n&pq={}&first={}&FORM=PERE',
+                'search_string': 'https://www.bing.com/search?q={}&count=50&first={}',
                 'page_range': range(1, self.ptr_limits['bing'], 10)
             },
             MultiSearcher.ENGINE_ASK: {
@@ -92,15 +92,8 @@ class MultiSearcher:
 
                 self.terminal.flush()
 
-            url = ''
-
             word_encoded = requote_uri(word)
-
-            if engine == MultiSearcher.ENGINE_BING:
-                url = current_engine['search_string'].format(word, word, str(ptr))
-            else:
-                url = current_engine['search_string'].format(word, str(ptr))
-
+            url = current_engine['search_string'].format(word_encoded, str(ptr))
             content = requests.get(url)
 
             if not content.ok:
