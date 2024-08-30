@@ -12,10 +12,12 @@
 # Feel free to fork and send a pull request to contribute ;).
 
 import requests
+from requests.utils import requote_uri
 import re
 import os
 import argparse
 import sys
+import urllib
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 from bs4 import BeautifulSoup
@@ -40,17 +42,17 @@ class MultiSearcher:
                              'bing|rambler|youtube'
         self.engines = {
             MultiSearcher.ENGINE_BING: {
-                'progress_string': '[Bing] Quering page {}/{} with dork {}',
-                'search_string': 'http://www.bing.com/search?q={}&count=50&first={}&rdr=1',
+                'progress_string': '[Bing] Quering page {}/{} with dork {}\n',
+                'search_string': 'https://www.bing.com/search?q={}&go=Submit&qs=n&pq={}&first={}&FORM=PERE',
                 'page_range': range(1, self.ptr_limits['bing'], 10)
             },
             MultiSearcher.ENGINE_ASK: {
-                'progress_string': '[Ask] Quering page {}/{} with dork {}',
+                'progress_string': '[Ask] Quering page {}/{} with dork {}\n',
                 'search_string': 'http://www.ask.com/web?q={}&page={}',
                 'page_range': range(1, self.ptr_limits['ask'])
             },
             MultiSearcher.ENGINE_RAMBLER: {
-                'progress_string': '[Rambler] Quering page {}/{} with dork {}',
+                'progress_string': '[Rambler] Quering page {}/{} with dork {}\n',
                 'search_string': 'http://nova.rambler.ru/search?query={}&page={}',
                 'page_range': range(1, self.ptr_limits['rambler'])
             }
@@ -88,9 +90,18 @@ class MultiSearcher:
                     ptr, self.ptr_limits[engine], word
                 ))
 
-            content = requests.get(
-                current_engine['search_string'].format(word, str(ptr))
-            )
+                self.terminal.flush()
+
+            url = ''
+
+            word_encoded = requote_uri(word)
+
+            if engine == MultiSearcher.ENGINE_BING:
+                url = current_engine['search_string'].format(word, word, str(ptr))
+            else:
+                url = current_engine['search_string'].format(word, str(ptr))
+
+            content = requests.get(url)
 
             if not content.ok:
                 pass
@@ -98,11 +109,12 @@ class MultiSearcher:
             try:
                 soup = BeautifulSoup(content.text, 'html.parser')
 
-                for link in soup.find_all("a"):
+                for link in soup.find_all('a'):
                     link = link.get('href')
 
                     if self.is_valid_link(link):
                         self.links.append(link)
+
                         with self.lock:
                             with open(self.output, 'a+') as fd:
                                 fd.write(link + '\n')
@@ -119,6 +131,7 @@ class MultiSearcher:
     def main(self):
         with ThreadPoolExecutor(max_workers=self.threads) as word_executor:
             for word in open(self.dork_file):
+                word = word.replace('\n', '').replace('\r', '')
                 word_executor.submit(self.search, word)
         
         print("Finished!")
