@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # -*- encoding: utf8 -*-
 # Multi searcher
 #
@@ -8,18 +8,19 @@
 # Current engines:
 # [ask, bing, rambler.ru]
 #
-# Made to be simple, so this is not free of bugs.
+# Made to be simple, so this is not bug free.
 # Feel free to fork and send a pull request to contribute ;).
 
 import requests
+from requests.utils import requote_uri
 import re
 import os
 import argparse
 import sys
-from threading import Thread, Event, Lock
-from Queue import Queue
+import urllib
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 from bs4 import BeautifulSoup
-
 
 class MultiSearcher:
     ENGINE_BING = 'bing'
@@ -42,26 +43,22 @@ class MultiSearcher:
         self.engines = {
             MultiSearcher.ENGINE_BING: {
                 'progress_string': '[Bing] Quering page {}/{} with dork {}\n',
-                'search_string': 'http://www.bing.com/search?q={}&count=50&first={}',
-                'page_range': xrange(1, self.ptr_limits['bing'], 10)
+                'search_string': 'https://www.bing.com/search?q={}&count=50&first={}',
+                'page_range': range(1, self.ptr_limits['bing'], 10)
             },
             MultiSearcher.ENGINE_ASK: {
                 'progress_string': '[Ask] Quering page {}/{} with dork {}\n',
                 'search_string': 'http://www.ask.com/web?q={}&page={}',
-                'page_range': xrange(1, self.ptr_limits['ask'])
+                'page_range': range(1, self.ptr_limits['ask'])
             },
             MultiSearcher.ENGINE_RAMBLER: {
                 'progress_string': '[Rambler] Quering page {}/{} with dork {}\n',
                 'search_string': 'http://nova.rambler.ru/search?query={}&page={}',
-                'page_range': xrange(1, self.ptr_limits['rambler'])
+                'page_range': range(1, self.ptr_limits['rambler'])
             }
         }
 
         self.threads = threads
-        self.q = Queue()
-        self.t_stop = Event()
-        self.counter = 0
-        self.list_size = len(open(self.dork_file).readlines())
         self.lock = Lock()
         self.terminal = sys.stdout
 
@@ -73,6 +70,14 @@ class MultiSearcher:
             MultiSearcher.ENGINE_ASK,
             MultiSearcher.ENGINE_RAMBLER
         ]
+    
+    def is_valid_link(self, link):
+        return (
+            link is not None 
+            and "http" in link 
+            and not re.search(self.exclude_itens, link) 
+            and link not in self.links
+        )
 
     def get_links(self, word, engine):
         """Fetch links from engnies"""
@@ -85,79 +90,54 @@ class MultiSearcher:
                     ptr, self.ptr_limits[engine], word
                 ))
 
-            content = requests.get(
-                current_engine['search_string'].format(word, str(ptr))
-            )
+                self.terminal.flush()
 
-            if content.ok:
-                try:
-                    soup = BeautifulSoup(content.text, 'html.parser')
+            word_encoded = requote_uri(word)
+            url = current_engine['search_string'].format(word_encoded, str(ptr))
+            content = requests.get(url)
 
-                    for link in soup.find_all('a'):
-                        link = link.get('href')
-
-                        if 'http' in link and not re.search(
-                            self.exclude_itens, link
-                        ):
-
-                            if link not in self.links:
-                                self.links.append(link)
-                                with self.lock:
-                                    with open(self.output, 'a+') as fd:
-                                        fd.write(link + '\n')
-                except Exception:
-                    pass
-
-    def search(self, q):
-        """Control flow"""
-        while not self.t_stop.is_set():
-            self.t_stop.wait(1)
+            if not content.ok:
+                pass
 
             try:
-                word = q.get()
-                for engine in MultiSearcher.get_engines():
-                    self.get_links(word, engine)
+                soup = BeautifulSoup(content.text, 'html.parser')
 
-            except Exception:
+                for link in soup.find_all('a'):
+                    link = link.get('href')
+
+                    if self.is_valid_link(link):
+                        self.links.append(link)
+
+                        with self.lock:
+                            with open('output/{}'.format(self.output), 'a+') as fd:
+                                fd.write(link + '\n')
+            except Exception as e:
                 pass
-            finally:
-                self.counter += 1
-                q.task_done()
+    
+    def search(self, word):
+        engine_count = len(MultiSearcher.get_engines())
+
+        with ThreadPoolExecutor(max_workers=engine_count) as engine_executor:
+            for engine in MultiSearcher.get_engines():
+                engine_executor.submit(self.get_links, word, engine)
 
     def main(self):
-        """ Prepare threads and launch main search"""
-        for _ in xrange(self.threads):
-            t = Thread(target=self.search, args=(self.q,))
-            t.setDaemon(True)
-            t.start()
-
-        for word in open(self.dork_file):
-            self.q.put(word.strip())
-
-        try:
-            while not self.t_stop.is_set():
-                self.t_stop.wait(1)
-                if self.counter == self.list_size:
-                    self.t_stop.set()
-
-        except KeyboardInterrupt:
-            print '~ Sending signal to kill threads...'
-            self.t_stop.set()
-            exit(0)
-
-        self.q.join()
-        print 'Finished!'
-
+        with ThreadPoolExecutor(max_workers=self.threads) as word_executor:
+            for word in open(self.dork_file):
+                word = word.replace('\n', '').replace('\r', '')
+                word_executor.submit(self.search, word)
+        
+        print("Finished!")
 
 if __name__ == "__main__":
-    banner = '''
+    banner = """
       __  __       _ _   _  _____                     _
      |  \/  |     | | | (_)/ ____|                   | |
      | \  / |_   _| | |_ _| (___   ___  __ _ _ __ ___| |__   ___ _ __
      | |\/| | | | | | __| |\___ \ / _ \/ _` | '__/ __| '_ \ / _ \ '__|
      | |  | | |_| | | |_| |____) |  __/ (_| | | | (__| | | |  __/ |
      |_|  |_|\__,_|_|\__|_|_____/ \___|\__,_|_|  \___|_| |_|\___|_|
-    '''
+    """
 
     parser = argparse.ArgumentParser(description='Procz Multi Searcher')
 
@@ -183,14 +163,15 @@ if __name__ == "__main__":
         help='Concurrent workers (By word)',
         type=int
     )
-    parser.add_argument('--version', action='version', version='%(prog)s 1.0')
+    parser.add_argument('--version', action='version', version='%(prog)s 2.0.0')
     args = parser.parse_args()
 
     if args.dork_file:
         if not os.path.isfile(args.dork_file):
             exit('File {} not found'.format(args.dork_file))
 
-        print banner
+        print(banner)
+
         multi_searcher = MultiSearcher(
             args.dork_file,
             args.output,
