@@ -27,9 +27,8 @@ Basic usage:
 $ python multisearcher.py -f word_file -o output_file -t threads
 ```
 
-the output file will be created in `output/` directory
-	
-The words in the word_file are separated by a end_line:
+- Output file will be created in `output/` directory	
+- The words in the word_file must be separated by a end_line:
 
 ```
 work /wp-content/
@@ -37,7 +36,7 @@ products index.php?option=
 ...
 ```
 
-Or full help:
+Full help:
 ```
 $ python multisearcher.py -h
 ```
