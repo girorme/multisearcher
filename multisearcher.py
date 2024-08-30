@@ -109,7 +109,7 @@ class MultiSearcher:
                         self.links.append(link)
 
                         with self.lock:
-                            with open(self.output, 'a+') as fd:
+                            with open('output/{}'.format(self.output), 'a+') as fd:
                                 fd.write(link + '\n')
             except Exception as e:
                 pass
