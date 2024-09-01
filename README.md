@@ -1,8 +1,9 @@
 MultiSearcher
 ---
 
-MultiSearcher is an open source scan which uses some engines
-to find web sites with the use of keywords and phrases
+MultiSearcher uses some engines to find web sites with the use of keywords and phrases
+
+![output](https://github.com/user-attachments/assets/f550bd4d-b878-4c73-b42c-414fc115d7e1)
 
 ### Dependencies
 * Docker to run via container with no dependencies
