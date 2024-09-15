@@ -1,13 +1,13 @@
-import asyncio #corutines
+import asyncio  # corutines
 import aiohttp
 import re
 import os
 import argparse
 import sys
-from bs4 import BeautifulSoup
-from requests.utils import requote_uri
 import time
 import aiofiles
+from bs4 import BeautifulSoup
+from requests.utils import requote_uri
 
 
 class MultiSearcher:
@@ -49,29 +49,28 @@ class MultiSearcher:
         self.threads = threads
         self.terminal = sys.stdout
 
-    
     def get_engines(self):
         """Get current engines"""
         return self.engines
-    
+
     def is_valid_link(self, link):
         "Check if a link is valid or not"
         return (
-            link is not None 
-            and "http" in link 
-            and not re.search(self.exclude_items, link) 
+            link is not None
+            and "http" in link
+            and not re.search(self.exclude_items, link)
             and link not in self.links
         )
-        
+
     async def get_links(self, session, word, engine):
         """Fetch links from engines asynchronously"""
-        
-        if not os.path.exists('output'): #check if the output folder exists
+
+        if not os.path.exists('output'):  # check if the output folder exists
             print('Output folder does not exist, creating it...')
-            os.makedirs('output') #create the output folder
+            os.makedirs('output')  # create the output folder
 
         current_engine = self.engines[engine]
-        
+
         for ptr in current_engine['page_range']:
             self.terminal.write(current_engine['progress_string'].format(
                 ptr, self.ptr_limits[engine], word
@@ -79,7 +78,8 @@ class MultiSearcher:
             self.terminal.flush()
 
             word_encoded = requote_uri(word)
-            url = current_engine['search_string'].format(word_encoded, str(ptr))
+            url = current_engine['search_string'].format(
+                word_encoded, str(ptr))
 
             async with session.get(url) as response:
                 if response.status != 200:
@@ -94,7 +94,7 @@ class MultiSearcher:
                         self.links.append(link)
                         async with aiofiles.open(f'output/{self.output}', 'a+') as fd:
                             await fd.write(link + '\n')
-    
+
     async def search(self, word):
         async with aiohttp.ClientSession() as session:
             tasks = [
@@ -102,10 +102,9 @@ class MultiSearcher:
                 for engine in self.get_engines()
             ]
             await asyncio.gather(*tasks)
-            
-    
-    async def main(self,debug=False):
-        if debug==True:
+
+    async def main(self, debug=False):
+        if debug == True:
             start = time.time()
 
         tasks = []
@@ -114,16 +113,16 @@ class MultiSearcher:
                 for word in f:
                     word = word.strip()
                     tasks.append(self.search(word))
-                    
+
             await asyncio.gather(*tasks)
 
-        if debug==True:
+        if debug == True:
             end = time.time()
         print(f"Finished! Output saved in output/{self.output}")
-        if debug==True:
+        if debug == True:
             print(f"Elapsed time {round(end - start, 2)}s")
 
-    
+
 def parseArgs():
     parser = argparse.ArgumentParser(description='Procz Multi Searcher')
 
@@ -149,9 +148,11 @@ def parseArgs():
         help='Concurrent workers (By word)',
         type=int
     )
-    parser.add_argument('--version', action='version', version='%(prog)s 2.0.0')
+    parser.add_argument('--version', action='version',
+                        version='%(prog)s 2.0.0')
     args = parser.parse_args()
     return args
+
 
 def printBanner():
     banner = """
@@ -163,25 +164,26 @@ def printBanner():
      |_|  |_|\__,_|_|\__|_|_____/ \___|\__,_|_|  \___|_| |_|\___|_|
     """
     print(banner)
-        
-#you can test the performances adding line_profiler library 
-#@profile   #enable this and run the command kernprof -l -v multisearcher.py to see how long various parts of the program executed
+
+# you can test the performances adding line_profiler library
+# @profile   #enable this and run the command kernprof -l -v multisearcher.py to see how long various parts of the program executed
+
+
 def run_test(debug=False):
-    #inizialization
-    args=parseArgs()
+    # inizialization
+    args = parseArgs()
     printBanner()
-    
+
     if args.dork_file:
         if not os.path.isfile(args.dork_file):
             exit('File {} not found'.format(args.dork_file))
-
 
         multi_searcher = MultiSearcher(
             args.dork_file,
             args.output,
             args.threads
         )
-        
+
         asyncio.run(multi_searcher.main(debug=debug))
 
 
