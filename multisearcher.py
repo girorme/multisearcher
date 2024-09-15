@@ -47,16 +47,16 @@ class MultiSearcher:
                 'search_string': 'https://www.bing.com/search?q={}&count=50&first={}',
                 'page_range': range(1, self.ptr_limits['bing'], 10)
             },
-            MultiSearcher.ENGINE_ASK: {
-                'progress_string': '[Ask] Querying page {}/{} with dork {}\n',
-                'search_string': 'http://www.ask.com/web?q={}&page={}',
-                'page_range': range(1, self.ptr_limits['ask'])
-            },
-            MultiSearcher.ENGINE_RAMBLER: {
-                'progress_string': '[Rambler] Querying page {}/{} with dork {}\n',
-                'search_string': 'http://nova.rambler.ru/search?query={}&page={}',
-                'page_range': range(1, self.ptr_limits['rambler'])
-            }
+            # MultiSearcher.ENGINE_ASK: {
+            #     'progress_string': '[Ask] Querying page {}/{} with dork {}\n',
+            #     'search_string': 'http://www.ask.com/web?q={}&page={}',
+            #     'page_range': range(1, self.ptr_limits['ask'])
+            # },
+            # MultiSearcher.ENGINE_RAMBLER: {
+            #     'progress_string': '[Rambler] Querying page {}/{} with dork {}\n',
+            #     'search_string': 'http://nova.rambler.ru/search?query={}&page={}',
+            #     'page_range': range(1, self.ptr_limits['rambler'])
+            # }
         }
 
         self.threads = threads
@@ -101,7 +101,7 @@ class MultiSearcher:
                 content = await response.text()
                 soup = BeautifulSoup(content, 'html.parser')
 
-                for link in soup.find_all('a'):
+                for link in soup.find_all('a', {'class': 'tilk'}):
                     link = link.get('href')
                     if self.is_valid_link(link):
                         self.links.append(link)

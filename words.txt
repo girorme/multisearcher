@@ -1,5 +1,1 @@
 eleicoes /wp-content/
-varejo /wp-content/
-loja online /wp-content/
-teclado /wp-content/
-ecommerce loja /wp-content/
