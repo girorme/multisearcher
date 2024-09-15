@@ -94,19 +94,23 @@ class MultiSearcher:
             url = current_engine['search_string'].format(
                 word_encoded, str(ptr))
 
-            async with session.get(url) as response:
-                if response.status != 200:
-                    continue
+            try:
+                async with session.get(url) as response:
+                    if response.status != 200:
+                        continue
 
-                content = await response.text()
-                soup = BeautifulSoup(content, 'html.parser')
+                    content = await response.text()
+                    soup = BeautifulSoup(content, 'html.parser')
 
-                for link in soup.find_all('a', {'class': 'tilk'}):
-                    link = link.get('href')
-                    if self.is_valid_link(link):
-                        self.links.append(link)
-                        async with aiofiles.open(f'output/{self.output}', 'a+') as fd:
-                            await fd.write(link + '\n')
+                    for link in soup.find_all('a', {'class': 'tilk'}):
+                        link = link.get('href')
+                        if self.is_valid_link(link):
+                            self.links.append(link)
+                            async with aiofiles.open(f'output/{self.output}', 'a+') as fd:
+                                await fd.write(link + '\n')
+
+            except Exception as e:
+                print(f'Error: {e}')
 
     async def search(self, word):
         async with aiohttp.ClientSession() as session:
